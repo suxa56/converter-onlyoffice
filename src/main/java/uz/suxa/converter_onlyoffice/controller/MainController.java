@@ -25,7 +25,7 @@ public class MainController {
     public String convert(
             @RequestParam("conv_input") MultipartFile file
     ) {
-        service.sendFile(file);
+        service.convertFile(file);
         return "index";
     }
 }

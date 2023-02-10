@@ -8,13 +8,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
+
+import static java.nio.file.Files.createDirectory;
 
 @Service
 public class ConverterService {
@@ -29,6 +34,10 @@ public class ConverterService {
     private String docsSecret;
 
     public void convertFile(MultipartFile file) {
+
+    }
+
+    public void convertFileasd(MultipartFile file) {
         String json = buildJson(file.getOriginalFilename());
 
         try {
@@ -58,6 +67,58 @@ public class ConverterService {
         }
     }
 
+    public String getStorageLocation() {
+        String storageAddress = null;
+        String storageFolder = "documents";
+        try {
+             storageAddress = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        String serverPath = System.getProperty("user.dir");  // get the path to the server
+        String directory;  // create the storage directory
+        if (Paths.get(storageAddress).isAbsolute()) {
+            directory = storageAddress + File.separator;
+        } else {
+            directory = serverPath
+                    + File.separator + storageFolder
+                    + File.separator + storageAddress
+                    + File.separator;
+        }
+        if (!Files.exists(Paths.get(directory))) {
+            createDirectory(Paths.get(directory));
+        }
+        return directory;
+    }
+
+    public Path generateFilepath(final String directory, final String fullFileName) {
+        String fileName = getFileNameWithoutExtension(fullFileName);  // get file name without extension
+        String fileExtension = getExtension(fullFileName);  // get file extension
+        Path path = Paths.get(directory + fullFileName);  // get the path to the files with the specified name
+
+        for (int i = 1; Files.exists(path); i++) {  // run through all the files with the specified name
+            // get a name of each file without extension and add an index to it
+            fileName = getFileNameWithoutExtension(fullFileName) + "(" + i + ")";
+
+            // create a new path for this file with the correct name and extension
+            path = Paths.get(directory + fileName + fileExtension);
+        }
+
+        path = Paths.get(directory + fileName + fileExtension);
+        return path;
+    }
+
+    private void createDirectory(final Path path) {
+        if (Files.exists(path)) {
+            return;
+        }
+        try {
+            Files.createDirectories(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private String buildJson(String filename) {
         String fileType = getExtension(filename);
         String json;
@@ -81,6 +142,11 @@ public class ConverterService {
                 .put("token", token)
                 .toString();
         return json;
+    }
+
+    private String getFileNameWithoutExtension(String filename) {
+        String fileNameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
+        return fileNameWithoutExt;
     }
 
     private String getExtension(String filename) {

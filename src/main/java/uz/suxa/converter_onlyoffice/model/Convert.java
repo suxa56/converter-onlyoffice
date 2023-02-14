@@ -16,5 +16,4 @@ public class Convert {
     private String key;
     private String title;
     private String token;
-    private Boolean async;
 }

@@ -1,15 +1,19 @@
 package uz.suxa.converter_onlyoffice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.primeframework.jwt.Signer;
 import org.primeframework.jwt.domain.JWT;
 import org.primeframework.jwt.hmac.HMACSigner;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import uz.suxa.converter_onlyoffice.model.Convert;
@@ -37,7 +41,6 @@ public class ConverterService {
     private String docsSecret;
 
     private static final Integer MAX_KEY_LENGTH = 20;
-    private static final Integer CONVERTER_TIMEOUT = 120000;
     private static final Long FULL_LOADING_IN_PERCENT = 100L;
     private static final Integer KILOBYTE_SIZE = 1024;
     private String correctedFilename;
@@ -53,7 +56,7 @@ public class ConverterService {
     public void convertFile(MultipartFile file) {
         saveFileLocal(file);
 
-        String fileName = file.getOriginalFilename();
+        String fileName = correctedFilename;
 
         // get URL for downloading a file with the specified name
         String fileUri = getDownloadUrl(fileName);
@@ -62,28 +65,27 @@ public class ConverterService {
         String fileExt = getExtension(fileName);
 
         // get an editor internal extension (".docx", ".xlsx" or ".pptx")
-        String internalFileExt = getInternalFileExtension(fileName);
+        String internalFileExt = ".pdf";
 
         try {
-                String key = generateRevisionId(fileUri);  // generate document key
-                String newFileUri = getConvertedUri(fileUri, fileExt, internalFileExt, key, true);
+            String key = generateRevisionId(fileUri);  // generate document key
+            String newFileUri = getConvertedUri(fileUri, fileExt, internalFileExt, key);
 
                 /* get a file name of an internal file extension with an index if the file
                  with such a name already exists */
-                String nameWithInternalExt = getFileNameWithoutExtension(fileName) + internalFileExt;
-                String correctedName = correctedFilename;
+            String nameWithInternalExt = getFileNameWithoutExtension(fileName) + ".pdf";
 
-                URL url = new URL(newFileUri);
-                java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
-                InputStream stream = connection.getInputStream();  // get input stream of the converted file
+            URL url = new URL(newFileUri);
+            java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+            InputStream stream = connection.getInputStream();  // get input stream of the converted file
 
-                if (stream == null) {
-                    connection.disconnect();
-                    throw new RuntimeException("Input stream is null");
-                }
+            if (stream == null) {
+                connection.disconnect();
+                throw new RuntimeException("Input stream is null");
+            }
 
-                // create the converted file with input stream
-                createFile(Path.of(getFileLocation(correctedName)), stream);
+            // create the converted file with input stream
+            createFile(Path.of(getFileLocation(nameWithInternalExt)), stream);
 
             // create meta information about the converted file with the user ID and name specified
 //            return createUserMetadata(uid, fileName);
@@ -115,17 +117,13 @@ public class ConverterService {
     }
 
     private String getFileLocation(final String fileName) {
-        if (fileName.contains(File.separator)) {
-            return getStorageLocation() + fileName;
-        }
         return getStorageLocation() + (fileName);
     }
 
     private String getConvertedUri(final String documentUri, final String fromExtension,
-                                   final String toExtension, final String documentRevisionId,
-                                   final Boolean isAsync) {
+                                   final String toExtension, final String documentRevisionId) {
         // check if the fromExtension parameter is defined; if not, get it from the document url
-        String fromExt =  fromExtension;
+        String fromExt = fromExtension;
 
         // check if the file name parameter is defined; if not, get random uuid for this file
         String title = UUID.randomUUID().toString();
@@ -142,28 +140,22 @@ public class ConverterService {
         body.setFiletype(fromExt.replace(".", ""));
         body.setTitle(title);
         body.setKey(documentRevId);
-        if (isAsync) {
-            body.setAsync(true);
-        }
 
-        String headerToken = "";
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("url", body.getUrl());
-            map.put("outputtype", body.getOutputtype());
-            map.put("filetype", body.getFiletype());
-            map.put("title", body.getTitle());
-            map.put("key", body.getKey());
-            if (isAsync) {
-                map.put("async", body.getAsync());
-            }
+        String headerToken;
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("url", body.getUrl());
+        map.put("outputtype", body.getOutputtype());
+        map.put("filetype", body.getFiletype());
+        map.put("title", body.getTitle());
+        map.put("key", body.getKey());
 
-            // add token to the body if it is enabled
-            String token = createToken(map);
-            body.setToken(token);
+        // add token to the body if it is enabled
+        String token = createToken(map);
+        body.setToken(token);
 
-            Map<String, Object> payloadMap = new HashMap<>();
-            payloadMap.put("payload", map);  // create payload object
-            headerToken = createToken(payloadMap);  // create header token
+        Map<String, Object> payloadMap = new HashMap<>();
+        payloadMap.put("payload", map);  // create payload object
+        headerToken = createToken(payloadMap);  // create header token
 
         String jsonString = postToServer(body, headerToken);
 
@@ -211,21 +203,16 @@ public class ConverterService {
             connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             connection.setFixedLengthStreamingMode(bodyByte.length);
             connection.setRequestProperty("Accept", "application/json");
-            connection.setConnectTimeout(CONVERTER_TIMEOUT);
+
+            connection.setRequestProperty("Authorization", "Bearer " + headerToken);
 
             connection.connect();
-
-            int statusCode = connection.getResponseCode();
-            if (statusCode != HttpStatus.OK.value()) {  // checking status code
-                connection.disconnect();
-                throw new RuntimeException("Convertation service returned status: " + statusCode);
-            }
 
             try (OutputStream os = connection.getOutputStream()) {
                 os.write(bodyByte);  // write bytes to the output stream
                 os.flush();  // force write data to the output stream that can be cached in the current thread
             }
-
+//
             response = connection.getInputStream();  // get the input stream
             jsonString = convertStreamToString(response);  // convert the response stream into a string
         } finally {
@@ -278,17 +265,13 @@ public class ConverterService {
     private String getDownloadUrl(String fileName) {
         String serverPath = getServerUrl();
         String storageAddress = getStorageLocation();
-        try {
-            String userAddress = "&userAddress=" + URLEncoder
-                    .encode(storageAddress, java.nio.charset.StandardCharsets.UTF_8.toString());
-            String query = "/download" + "?fileName="
-                    + URLEncoder.encode(fileName, java.nio.charset.StandardCharsets.UTF_8.toString())
-                    + userAddress;
+        String userAddress = "&userAddress=" + URLEncoder
+                .encode(storageAddress, StandardCharsets.UTF_8);
+        String query = "/download" + "?fileName="
+                + URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+                + userAddress;
 
-            return serverPath + query;
-        } catch (UnsupportedEncodingException e) {
-            return "";
-        }
+        return serverPath + query;
     }
 
     private String getServerUrl() {
@@ -298,10 +281,10 @@ public class ConverterService {
 
     @SneakyThrows
     private JSONObject convertStringToJSON(final String jsonString) {
-        Object obj = new Gson().toJson(jsonString);  // parse json string
-        JSONObject jsonObj = (JSONObject) obj;  // and turn it into a json object
+        JSONParser parser = new JSONParser();
+        JSONObject jsonObject = (JSONObject) parser.parse(jsonString);
 
-        return jsonObj;
+        return jsonObject;
     }
 
     private void saveFileLocal(MultipartFile file) {
@@ -315,10 +298,10 @@ public class ConverterService {
     }
 
     private String getStorageLocation() {
-        String storageAddress = null;
+        String storageAddress;
         String storageFolder = "documents";
         try {
-             storageAddress = InetAddress.getLocalHost().getHostAddress();
+            storageAddress = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
@@ -340,7 +323,7 @@ public class ConverterService {
 
     private Path generateFilepath(final String directory, final String fullFileName) {
         String fileName = getFileNameWithoutExtension(fullFileName);  // get file name without extension
-        String fileExtension = getInternalFileExtension(fullFileName);  // get file extension
+        String fileExtension = getExtension(fullFileName);  // get file extension
         Path path = Paths.get(directory + fullFileName);  // get the path to the files with the specified name
 
         for (int i = 1; Files.exists(path); i++) {  // run through all the files with the specified name
@@ -378,14 +361,76 @@ public class ConverterService {
         return fileExt.toLowerCase();
     }
 
-    private String getInternalFileExtension(String filename) {
-        String extension = "";
 
-        int i = filename.lastIndexOf('.');
-        if (i > 0) {
-            extension = filename.substring(i + 1);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public ResponseEntity<Resource> downloadFile(final String fileName) {
+        Resource resource = loadFileAsResource(fileName);  // load the specified file as a resource
+        String contentType = "application/octet-stream";
+
+        // create a response with the content type, header and body with the file data
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
+    }
+
+    public Resource loadFileAsResource(final String fileName) {
+        String fileLocation = getForcesavePath(fileName,
+                false);  // get the path where all the forcely saved file versions are saved
+        if (fileLocation.isBlank()) {  // if file location is empty
+            fileLocation = getFileLocation(fileName);  // get it by the file name
         }
-        return extension;
+        try {
+            Path filePath = Paths.get(fileLocation);  // get the path to the file location
+            Resource resource = new UrlResource(filePath.toUri());  // convert the file path to URL
+            if (resource.exists()) {
+                return resource;
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
+    public String getForcesavePath(final String fileName, final Boolean create) {
+        String directory = getStorageLocation();
+
+        Path path = Paths.get(directory);  // get the storage directory
+        if (!Files.exists(path)) {
+            return "";
+        }
+
+        directory = getFileLocation(fileName) + "-hist" + File.separator;
+
+        path = Paths.get(directory);   // get the history file directory
+        if (!create && !Files.exists(path)) {
+            return "";
+        }
+
+        createDirectory(path);  // create a new directory where all the forcely saved file versions will be saved
+
+        directory = directory + fileName;
+        path = Paths.get(directory);
+        if (!create && !Files.exists(path)) {
+            return "";
+        }
+
+        return directory;
     }
 }

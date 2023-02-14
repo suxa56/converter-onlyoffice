@@ -1,5 +1,7 @@
 package uz.suxa.converter_onlyoffice.controller;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,5 +29,10 @@ public class MainController {
     ) {
         service.convertFile(file);
         return "index";
+    }
+
+    @GetMapping(path = "/download")
+    public ResponseEntity<Resource> download(@RequestParam("fileName") final String fileName) {
+        return service.downloadFile(fileName);
     }
 }

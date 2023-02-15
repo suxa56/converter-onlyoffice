@@ -25,9 +25,10 @@ public class MainController {
 
     @PostMapping("/")
     public String convert(
-            @RequestParam("conv_input") MultipartFile file
+            @RequestParam("conv_input") final MultipartFile file,
+            @RequestParam("conv_output") final String outputType
     ) {
-        service.convertFile(file);
+        service.convertFile(file, outputType);
         return "index";
     }
 

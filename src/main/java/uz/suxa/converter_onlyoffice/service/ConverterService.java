@@ -53,7 +53,7 @@ public class ConverterService {
         this.objectMapper = objectMapper;
     }
 
-    public void convertFile(MultipartFile file) {
+    public void convertFile(MultipartFile file, String outputType) {
         saveFileLocal(file);
 
         String fileName = correctedFilename;
@@ -65,15 +65,15 @@ public class ConverterService {
         String fileExt = getExtension(fileName);
 
         // get an editor internal extension (".docx", ".xlsx" or ".pptx")
-        String internalFileExt = ".pdf";
+        String outputFileExt = outputType;
 
         try {
             String key = generateRevisionId(fileUri);  // generate document key
-            String newFileUri = getConvertedUri(fileUri, fileExt, internalFileExt, key);
+            String newFileUri = getConvertedUri(fileUri, fileExt, outputFileExt, key);
 
                 /* get a file name of an internal file extension with an index if the file
                  with such a name already exists */
-            String nameWithInternalExt = getFileNameWithoutExtension(fileName) + ".pdf";
+            String nameWithInternalExt = getFileNameWithoutExtension(fileName) + outputFileExt;
 
             URL url = new URL(newFileUri);
             java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();

@@ -17,12 +17,6 @@
         <java.version>17</java.version>
     </properties>
     <dependencies>
-<!--        JSON-->
-<!--        <dependency>-->
-<!--            <groupId>org.json</groupId>-->
-<!--            <artifactId>json</artifactId>-->
-<!--            <version>20220924</version>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>

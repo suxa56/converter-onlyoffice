@@ -22,10 +22,13 @@
         <button type="submit">Отправить</button>
     </div>
 </form>
+<a style="display: none" th:href="${downloadLink}" download="" id="download_link"></a>
 
 
 <script>
-
+    if (document.querySelector('#download_link').href !== window.location.href) {
+        document.querySelector('#download_link').click()
+    }
 </script>
 </body>
 </html>

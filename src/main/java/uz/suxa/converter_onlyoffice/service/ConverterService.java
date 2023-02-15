@@ -53,7 +53,7 @@ public class ConverterService {
         this.objectMapper = objectMapper;
     }
 
-    public void convertFile(MultipartFile file, String outputType) {
+    public String convertFile(MultipartFile file, String outputType) {
         saveFileLocal(file);
 
         String fileName = correctedFilename;
@@ -69,10 +69,13 @@ public class ConverterService {
 
         try {
             String key = generateRevisionId(fileUri);  // generate document key
-            String newFileUri = getConvertedUri(fileUri, fileExt, outputFileExt, key);
+            String newFileUri = getConvertedUri(fileName, fileUri, fileExt, outputFileExt, key);
+            return newFileUri;
+        }
 
-                /* get a file name of an internal file extension with an index if the file
-                 with such a name already exists */
+//        TODO(): Remove return statement and block comment if you want to download to project location
+        /*        *//* get a file name of an internal file extension with an index if the file
+                 with such a name already exists *//*
             String nameWithInternalExt = getFileNameWithoutExtension(fileName) + outputFileExt;
 
             URL url = new URL(newFileUri);
@@ -89,9 +92,10 @@ public class ConverterService {
 
             // create meta information about the converted file with the user ID and name specified
 //            return createUserMetadata(uid, fileName);
-        } catch (Exception e) {
+        }*/ catch (Exception e) {
             e.printStackTrace();
         }
+        return "";
         // if the operation of file converting is unsuccessful, an error occurs
 //        return "{ \"error\": \"" + "The file can't be converted.\"}";
     }
@@ -120,13 +124,13 @@ public class ConverterService {
         return getStorageLocation() + (fileName);
     }
 
-    private String getConvertedUri(final String documentUri, final String fromExtension,
+    private String getConvertedUri(final String fileName, final String documentUri, final String fromExtension,
                                    final String toExtension, final String documentRevisionId) {
         // check if the fromExtension parameter is defined; if not, get it from the document url
         String fromExt = fromExtension;
 
         // check if the file name parameter is defined; if not, get random uuid for this file
-        String title = UUID.randomUUID().toString();
+        String title = fileName;
 
         String documentRevId = documentRevisionId == null || documentRevisionId.isEmpty()
                 ? documentUri : documentRevisionId;

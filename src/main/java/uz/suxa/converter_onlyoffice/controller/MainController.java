@@ -20,8 +20,7 @@ public class MainController {
     }
 
     @GetMapping("/")
-    public String main(Model model) {
-        model.addAttribute("downloadLink", "");
+    public String main() {
         return "index";
     }
 

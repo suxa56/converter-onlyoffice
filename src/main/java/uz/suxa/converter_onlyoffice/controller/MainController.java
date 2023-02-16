@@ -7,16 +7,22 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import uz.suxa.converter_onlyoffice.service.ConverterService;
+import uz.suxa.converter_onlyoffice.service.ExtService;
+
+import java.util.HashMap;
 
 @Controller
 public class MainController {
 
     private final ConverterService service;
+    private final ExtService extService;
 
-    public MainController(ConverterService service) {
+    public MainController(ConverterService service, ExtService extService) {
         this.service = service;
+        this.extService = extService;
     }
 
     @GetMapping("/")
@@ -24,7 +30,7 @@ public class MainController {
         return "index";
     }
 
-    @PostMapping("/")
+    @PostMapping("/upload")
     public String convert(
             @RequestParam("conv_input") final MultipartFile file,
             @RequestParam("conv_output") final String outputType,
@@ -38,5 +44,11 @@ public class MainController {
     @GetMapping(path = "/download")
     public ResponseEntity<Resource> download(@RequestParam("fileName") final String fileName) {
         return service.downloadFile(fileName);
+    }
+
+    @PostMapping(path = "/config")
+    @ResponseBody
+    public HashMap<String, String> configParameters() {
+        return extService.configParameters();
     }
 }

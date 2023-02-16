@@ -7,28 +7,23 @@
 <body>
 <form name="conv_form" method="post" enctype="multipart/form-data">
     <div>
-        <label for="conv_input">Выберите документ для конвертации в pdf </label><br>
-        <input id="conv_input" name="conv_input" type="file" accept=".doc, .docx, .ppt, .pptx, .xls, .xlsx"><br><br>
+        <label for="conv_input">Выберите документ для конвертации</label><br>
+        <input id="conv_input" name="conv_input" type="file">
     </div>
+    <span>
+        <input id="error_message" type="hidden" style="color: red; border: 0" value="Wrong input format">
+    </span>
     <div>
         <label for="conv_output">Выходной формат</label>
         <select id="conv_output" name="conv_output">
-            <option value=".pdf">pdf</option>
-            <option value=".rtf">rtf</option>
-            <option value=".txt">txt</option>
+            <option>Choose file to convert</option>
         </select>
     </div>
     <div>
-        <button type="submit">Отправить</button>
+        <button id="submit" type="submit">Отправить</button>
     </div>
 </form>
-<a style="display: none" th:href="${downloadLink}" download="" id="download_link"></a>
 
-
-<script>
-    if (document.querySelector('#download_link').href !== window.location.href) {
-        document.querySelector('#download_link').click()
-    }
-</script>
+<script type="text/javascript" src="js/convert.js"></script>
 </body>
 </html>

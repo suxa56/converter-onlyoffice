@@ -29,21 +29,37 @@ public class ExtService {
     public HashMap<String, String> configParameters() {
         HashMap<String, String> configuration = new HashMap<>();
 
-        configuration.put("InputExtList", String.join(",", getInputExt()));
+        configuration.put("DocInputExtList", String.join(",", getDocInputExt()));
+        configuration.put("SpreadsheetInputExtList", String.join(",", getSpreadsheetInputExt()));
+        configuration.put("PresentationInputExtList", String.join(",", getPresentationInputExt()));
+        configuration.put("DocOutputExtList", String.join(",", getDocOutputExt()));
+        configuration.put("SpreadsheetOutputExtList", String.join(",", getSpreadsheetOutputExt()));
+        configuration.put("PresentationOutputExtList", String.join(",", getPresentationOutputExt()));
+
         return configuration;
     }
 
-    private List<String> getInputExt() {
-        Set<String> input = new HashSet<>();
-        for (String ext: Arrays.asList(docsInput.split("\\|"))) {
-            input.add(ext);
-        }
-        for (String ext: Arrays.asList(spreadsheetInput.split("\\|"))) {
-            input.add(ext);
-        }
-        for (String ext: Arrays.asList(presentationInput.split("\\|"))) {
-            input.add(ext);
-        }
-        return input.stream().toList();
+    private List<String> getDocInputExt() {
+        return Arrays.asList(docsInput.split("\\|"));
+    }
+
+    private List<String> getSpreadsheetInputExt() {
+        return Arrays.asList(spreadsheetInput.split("\\|"));
+    }
+
+    private List<String> getPresentationInputExt() {
+        return Arrays.asList(presentationInput.split("\\|"));
+    }
+
+    private List<String> getDocOutputExt() {
+        return Arrays.asList(docsOutput.split("\\|"));
+    }
+
+    private List<String> getSpreadsheetOutputExt() {
+        return Arrays.asList(spreadsheetOutput.split("\\|"));
+    }
+
+    private List<String> getPresentationOutputExt() {
+        return Arrays.asList(presentationOutput.split("\\|"));
     }
 }

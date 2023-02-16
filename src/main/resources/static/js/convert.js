@@ -1,6 +1,17 @@
-const docsIF = new Array()
+const docInputExt = []
+const spreadsheetInputExt = []
+const presentationInputExt = []
+const docOutputExt = []
+const spreadsheetOutputExt = []
+const presentationOutputExt = []
+
+const DOCUMENT = 'docx'
+const SPREADSHEET = 'xlsx'
+const PRESENTATION = 'pptx'
+
 const input = document.querySelector('#conv_input')
 const errorMessage = document.querySelector('#error_message')
+const outputExt = document.querySelector('#conv_output')
 
 window.onload = async function () {
     await fetch("http://192.168.100.15:9090/config", {
@@ -11,17 +22,82 @@ window.onload = async function () {
     }).then((response) => response.json())
         .then((json) => {
             JSON.parse(JSON.stringify(json), (key, value) => {
-                docsIF.push(value.toString().split(','))
+                if (key === "DocInputExtList") {
+                    docInputExt.push(value.toString().split(','))
+                }
+                if (key === "SpreadsheetInputExtList") {
+                    spreadsheetInputExt.push(value.toString().split(','))
+                }
+                if (key === "PresentationInputExtList") {
+                    presentationInputExt.push(value.toString().split(','))
+                }
+                if (key === "DocOutputExtList") {
+                    docOutputExt.push(value.toString().split(','))
+                }
+                if (key === "SpreadsheetOutputExtList") {
+                    spreadsheetOutputExt.push(value.toString().split(','))
+                }
+                if (key === "PresentationOutputExtList") {
+                    presentationOutputExt.push(value.toString().split(','))
+                }
             })
         })
 }
 
 input.addEventListener("input", function () {
     let filename = input.value
+    clearOptions()
     let ext = filename.substring(filename.lastIndexOf("."))
-    if (!docsIF[0].includes(ext)) {
-        errorMessage.type = 'text'
-    } else {
+    let inputType = defineInputType(ext)
+    console.log('input type = ' + inputType)
+    if (inputType !== '') {
         errorMessage.type = 'hidden'
+        if (inputType === DOCUMENT) {
+            docOutputExt[0].forEach(el => {
+                console.log('docs fill')
+                createOptions(el, ext)
+            })
+        } else if (inputType === SPREADSHEET) {
+            spreadsheetOutputExt[0].forEach(el => {
+                console.log('spread fill')
+                createOptions(el, ext)
+            })
+        } else if (inputType === PRESENTATION) {
+            presentationOutputExt[0].forEach(el => {
+                console.log('present fill')
+                createOptions(el, ext)
+            })
+        }
+    } else {
+        errorMessage.type = 'text'
     }
 })
+
+function defineInputType(extension) {
+    if (docInputExt[0].includes(extension)) {
+        return DOCUMENT
+    }
+    if (spreadsheetInputExt[0].includes(extension)) {
+        return SPREADSHEET
+    }
+    if (presentationInputExt[0].includes(extension)) {
+        return PRESENTATION
+    }
+    return ''
+}
+
+function createOptions(element, extension) {
+    if (element !== extension) {
+        const option = document.createElement("option")
+        option.textContent = element
+        option.value = element
+        outputExt.appendChild(option)
+    }
+}
+
+function clearOptions() {
+    while (outputExt.firstChild.value !== outputExt.lastChild.value) {
+        console.log('cleared ' + outputExt.lastChild.value)
+        outputExt.removeChild(outputExt.lastChild)
+    }
+}

@@ -1,12 +1,13 @@
 package uz.suxa.converter_onlyoffice.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import uz.suxa.converter_onlyoffice.service.ConverterService;
 import uz.suxa.converter_onlyoffice.service.ExtService;
@@ -25,7 +26,7 @@ public class MainController {
     }
 
     @GetMapping("/")
-    public String main(Model model) {
+    public String main() {
         return "index";
     }
 
@@ -37,7 +38,6 @@ public class MainController {
             ) {
         service.convertFile(file, ext);
         model.addAttribute("uri", service.getConvertedFileUri());
-        model.addAttribute("name", service.getConvertedFileName());
         return "index";
     }
 

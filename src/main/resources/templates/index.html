@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-
 </head>
 <body>
 <form action="/" name="conv_form" method="post" enctype="multipart/form-data">
@@ -24,23 +23,7 @@
         <button type="submit">Отправить</button>
     </div>
 </form>
-<script>
-    let convertedUri = '[[${uri}]]'
-    let convertedName = '[[${name}]]'
-    console.log(convertedName)
-    console.log(convertedUri)
-
-    if (convertedUri !== '') {
-        let link = document.createElement("a")
-        link.download = ''
-        link.href = convertedUri
-        link.target = '_blank'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        // delete link
-    }
-</script>
+<a th:href="${uri}" download id="download" style="display: none;"></a>
 <script type="text/javascript" src="js/convert.js"></script>
 </body>
 </html>

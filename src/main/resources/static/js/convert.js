@@ -5,9 +5,6 @@ const docOutputExt = []
 const spreadsheetOutputExt = []
 const presentationOutputExt = []
 
-// let convertedUri = '[[${uri}]]'
-// let convertedName = '[[${name}]]'
-
 const DOCUMENT = 'docx'
 const SPREADSHEET = 'xlsx'
 const PRESENTATION = 'pptx'
@@ -15,8 +12,41 @@ const PRESENTATION = 'pptx'
 const input = document.querySelector('#file')
 const errorMessage = document.querySelector('#error_message')
 const outputExt = document.querySelector('#ext')
+const downloadLink = document.querySelector('#download')
 
-window.onload = async function () {
+window.onload = config()
+document.onload = linkInteract()
+
+input.addEventListener("input", function () {
+    let filename = input.value
+    clearOptions()
+    let ext = filename.substring(filename.lastIndexOf("."))
+    let inputType = defineInputType(ext)
+    console.log('input type = ' + inputType)
+    if (inputType !== '') {
+        errorMessage.type = 'hidden'
+        if (inputType === DOCUMENT) {
+            docOutputExt[0].forEach(el => {
+                console.log('docs fill')
+                createOptions(el, ext)
+            })
+        } else if (inputType === SPREADSHEET) {
+            spreadsheetOutputExt[0].forEach(el => {
+                console.log('spread fill')
+                createOptions(el, ext)
+            })
+        } else if (inputType === PRESENTATION) {
+            presentationOutputExt[0].forEach(el => {
+                console.log('present fill')
+                createOptions(el, ext)
+            })
+        }
+    } else {
+        errorMessage.type = 'text'
+    }
+})
+
+async function config () {
     await fetch("http://192.168.100.15:9090/config", {
         method: 'POST',
         headers: {
@@ -47,34 +77,13 @@ window.onload = async function () {
         })
 }
 
-input.addEventListener("input", function () {
-    let filename = input.value
-    clearOptions()
-    let ext = filename.substring(filename.lastIndexOf("."))
-    let inputType = defineInputType(ext)
-    console.log('input type = ' + inputType)
-    if (inputType !== '') {
-        errorMessage.type = 'hidden'
-        if (inputType === DOCUMENT) {
-            docOutputExt[0].forEach(el => {
-                console.log('docs fill')
-                createOptions(el, ext)
-            })
-        } else if (inputType === SPREADSHEET) {
-            spreadsheetOutputExt[0].forEach(el => {
-                console.log('spread fill')
-                createOptions(el, ext)
-            })
-        } else if (inputType === PRESENTATION) {
-            presentationOutputExt[0].forEach(el => {
-                console.log('present fill')
-                createOptions(el, ext)
-            })
-        }
-    } else {
-        errorMessage.type = 'text'
+function linkInteract () {
+    if (downloadLink.href !== window.location.href) {
+        downloadLink.click()
     }
-})
+    document.body.removeChild(downloadLink)
+}
+
 
 function defineInputType(extension) {
     if (docInputExt[0].includes(extension)) {

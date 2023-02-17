@@ -45,6 +45,9 @@ public class ConverterService {
     private static final Integer KILOBYTE_SIZE = 1024;
     private String correctedFilename;
 
+    private String convertedFileUri;
+    private String convertedFileName;
+
     private final HttpServletRequest request;
     private final ObjectMapper objectMapper;
 
@@ -53,7 +56,15 @@ public class ConverterService {
         this.objectMapper = objectMapper;
     }
 
-    public String convertFile(MultipartFile file, String outputType) {
+    public String getConvertedFileUri() {
+        return convertedFileUri;
+    }
+
+    public String getConvertedFileName() {
+        return convertedFileName;
+    }
+
+    public void convertFile(MultipartFile file, String outputType) {
         saveFileLocal(file);
 
         String fileName = correctedFilename;
@@ -70,7 +81,8 @@ public class ConverterService {
         try {
             String key = generateRevisionId(fileUri);  // generate document key
             String newFileUri = getConvertedUri(fileName, fileUri, fileExt, outputFileExt, key);
-            return newFileUri;
+            convertedFileUri = newFileUri;
+            convertedFileName = getFileNameWithoutExtension(fileName) + outputFileExt;
         }
 
 //        TODO(): Remove return statement and block comment if you want to download to project location
@@ -95,7 +107,6 @@ public class ConverterService {
         }*/ catch (Exception e) {
             e.printStackTrace();
         }
-        return "";
         // if the operation of file converting is unsuccessful, an error occurs
 //        return "{ \"error\": \"" + "The file can't be converted.\"}";
     }

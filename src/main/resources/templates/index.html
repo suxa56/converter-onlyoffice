@@ -3,27 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+
 </head>
 <body>
-<form name="conv_form" method="post" enctype="multipart/form-data">
+<form action="/" name="conv_form" method="post" enctype="multipart/form-data">
     <div>
-        <label for="conv_input">Выберите документ для конвертации</label><br>
-        <input id="conv_input" name="conv_input" type="file">
+        <label for="file">Выберите документ для конвертации</label><br>
+        <input id="file" name="file" type="file">
     </div>
     <span>
         <input id="error_message" type="hidden" style="color: red; border: 0" value="Wrong input format">
     </span>
     <div>
-        <label for="conv_output">Выходной формат</label>
-        <select id="conv_output" name="conv_output">
+        <label for="ext">Выходной формат</label>
+        <select id="ext" name="ext">
             <option>Choose file to convert</option>
         </select>
     </div>
     <div>
-        <button id="submit" type="submit">Отправить</button>
+        <button type="submit">Отправить</button>
     </div>
 </form>
+<script>
+    let convertedUri = '[[${uri}]]'
+    let convertedName = '[[${name}]]'
+    console.log(convertedName)
+    console.log(convertedUri)
 
+    if (convertedUri !== '') {
+        let link = document.createElement("a")
+        link.download = ''
+        link.href = convertedUri
+        link.target = '_blank'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        // delete link
+    }
+</script>
 <script type="text/javascript" src="js/convert.js"></script>
 </body>
 </html>

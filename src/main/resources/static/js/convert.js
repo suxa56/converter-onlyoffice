@@ -5,13 +5,16 @@ const docOutputExt = []
 const spreadsheetOutputExt = []
 const presentationOutputExt = []
 
+// let convertedUri = '[[${uri}]]'
+// let convertedName = '[[${name}]]'
+
 const DOCUMENT = 'docx'
 const SPREADSHEET = 'xlsx'
 const PRESENTATION = 'pptx'
 
-const input = document.querySelector('#conv_input')
+const input = document.querySelector('#file')
 const errorMessage = document.querySelector('#error_message')
-const outputExt = document.querySelector('#conv_output')
+const outputExt = document.querySelector('#ext')
 
 window.onload = async function () {
     await fetch("http://192.168.100.15:9090/config", {

@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class ConverterService {
@@ -42,7 +41,6 @@ public class ConverterService {
 
     private static final Integer MAX_KEY_LENGTH = 20;
     private static final Long FULL_LOADING_IN_PERCENT = 100L;
-    private static final Integer KILOBYTE_SIZE = 1024;
     private String correctedFilename;
 
     private String convertedFileUri;
@@ -58,10 +56,6 @@ public class ConverterService {
 
     public String getConvertedFileUri() {
         return convertedFileUri;
-    }
-
-    public String getConvertedFileName() {
-        return convertedFileName;
     }
 
     public void convertFile(MultipartFile file, String outputType) {
@@ -83,52 +77,9 @@ public class ConverterService {
             String newFileUri = getConvertedUri(fileName, fileUri, fileExt, outputFileExt, key);
             convertedFileUri = newFileUri;
             convertedFileName = getFileNameWithoutExtension(fileName) + outputFileExt;
-        }
-
-//        TODO(): Remove return statement and block comment if you want to download to project location
-        /*        *//* get a file name of an internal file extension with an index if the file
-                 with such a name already exists *//*
-            String nameWithInternalExt = getFileNameWithoutExtension(fileName) + outputFileExt;
-
-            URL url = new URL(newFileUri);
-            java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
-            InputStream stream = connection.getInputStream();  // get input stream of the converted file
-
-            if (stream == null) {
-                connection.disconnect();
-                throw new RuntimeException("Input stream is null");
-            }
-
-            // create the converted file with input stream
-            createFile(Path.of(getFileLocation(nameWithInternalExt)), stream);
-
-            // create meta information about the converted file with the user ID and name specified
-//            return createUserMetadata(uid, fileName);
-        }*/ catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        // if the operation of file converting is unsuccessful, an error occurs
-//        return "{ \"error\": \"" + "The file can't be converted.\"}";
-    }
-
-    private boolean createFile(Path path, InputStream stream) {
-        if (Files.exists(path)) {
-            return true;
-        }
-        try {
-            File file = Files.createFile(path).toFile();  // create a new file in the specified path
-            try (FileOutputStream out = new FileOutputStream(file)) {
-                int read;
-                final byte[] bytes = new byte[KILOBYTE_SIZE];
-                while ((read = stream.read(bytes)) != -1) {
-                    out.write(bytes, 0, read);  // write bytes to the output stream
-                }
-                out.flush();  // force write data to the output stream that can be cached in the current thread
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     private String getFileLocation(final String fileName) {
@@ -309,7 +260,6 @@ public class ConverterService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     private String getStorageLocation() {
